@@ -13,6 +13,10 @@ db.once('open', () => {
   logger.info('Successfully connected to MongoDB');
 });
 
+//Pagination and Filter
+app.get('/', async (req, res) => {
+  const { page_number, limit } = req.query;
+});
 const User = mongoose.model('users', mongoose.Schema(usersSchema));
 
 module.exports = {
