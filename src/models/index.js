@@ -14,9 +14,6 @@ db.once('open', () => {
 });
 
 //Pagination and Filter
-app.get('/', async (req, res) => {
-  const { page_number, limit } = req.query;
-});
 const User = mongoose.model('users', mongoose.Schema(usersSchema));
 
 module.exports = {

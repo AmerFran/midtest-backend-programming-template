@@ -188,6 +188,19 @@ async function changePassword(request, response, next) {
     return next(error);
   }
 }
+//pagination
+app.get('/', async (req, res) => {
+  let { page, limit, sort, asc } = req.query;
+  if (!page) page = 1;
+  if (!limit) limit = 10;
+
+  const skip = (page - 1) * 10;
+  const users = await User.find()
+    .sort({ [sort]: asc })
+    .skip(skip)
+    .limit(limit);
+  res.send({ page: page, limit: limit, users: users });
+});
 
 module.exports = {
   getUsers,
