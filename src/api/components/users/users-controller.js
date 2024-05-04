@@ -1,5 +1,6 @@
 const usersService = require('./users-service');
 const { errorResponder, errorTypes } = require('../../../core/errors');
+const { User } = require('../../../models');
 
 /**
  * Handle get list of users request
@@ -189,19 +190,32 @@ async function changePassword(request, response, next) {
   }
 }
 //pagination
-app.get('/', async (req, res) => {
-  let { page, limit, sort, asc } = req.query;
-  if (!page) page = 1;
-  if (!limit) limit = 10;
+exports.getUsers = async (req, res) => {
+  const { pageNumber, limit, sort, asc } = req.query;
 
-  const skip = (page - 1) * 10;
-  const users = await User.find()
-    .sort({ [sort]: asc })
-    .skip(skip)
-    .limit(limit);
-  res.send({ page: page, limit: limit, users: users });
-});
+  // Validate and sanitize user input
+  const pageNumberValid = parseInt(pageNumber, 10) > 0;
+  const limitValid = parseInt(limit, 10) > 0;
+  const sortValid = ['name', 'email', 'createdAt'].includes(sort);
+  const ascValid = ['asc', 'desc'].includes(asc);
 
+  if (!(pageNumberValid && limitValid && sortValid && ascValid)) {
+    return res.status(400).send({ error: 'Invalid query parameters' });
+  }
+
+  const skip = (pageNumber - 1) * limit;
+  try {
+    const user = await User.find()
+      .sort({ [sort]: asc === 'asc' ? 1 : -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.send({ pageNumber, limit, users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
 module.exports = {
   getUsers,
   getUser,

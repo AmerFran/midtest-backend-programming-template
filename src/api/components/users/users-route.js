@@ -43,3 +43,5 @@ module.exports = (app) => {
     usersControllers.changePassword
   );
 };
+
+route.get(usersControllers.getUsers);
