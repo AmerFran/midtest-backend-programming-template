@@ -1,5 +1,4 @@
 const express = require('express');
-
 const authenticationMiddleware = require('../../middlewares/authentication-middleware');
 const celebrate = require('../../../core/celebrate-wrappers');
 const usersControllers = require('./users-controller');
@@ -12,7 +11,9 @@ module.exports = (app) => {
 
   // Get list of users
   route.get('/', authenticationMiddleware, usersControllers.getUsers);
-
+  route.get('/users', function (req, res, next) {
+    getUsers(req, res, next);
+  });
   // Create user
   route.post(
     '/',

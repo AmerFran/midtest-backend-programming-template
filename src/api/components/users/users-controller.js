@@ -2,6 +2,74 @@ const usersService = require('./users-service');
 const { errorResponder, errorTypes } = require('../../../core/errors');
 const { User } = require('../../../models');
 
+//pagination
+async function getUsers(req, res, next) {
+  try {
+    const pageNumber = parseInt(req.query.page_number, 10) || 1;
+    const pageSize = parseInt(req.query.page_size, 10) || 10;
+    const search = req.query.search || '';
+
+    // Validate and sanitize user input
+    const pageNumberValid = pageNumber > 0;
+    const pageSizeValid = pageSize > 0;
+
+    if (!(pageNumberValid && pageSizeValid)) {
+      return res.status(400).send({ error: 'Invalid query parameters' });
+    }
+
+    const skip = (pageNumber - 1) * pageSize;
+    // Membuat parameter dan fungsi sorting
+    const sort = req.query.sort && req.query.sort.split(':');
+    const sortField = sort && sort[0];
+    const sortType = sort && sort[1];
+
+    let sortOpsi = {}; // baris ini menginialisasi objek kosong yg menyimpan kriteria untuk operasi search
+    if (sortField && sortType) {
+      sortOpsi[sortField] = sortType === 'asc' ? 1 : -1;
+    } else {
+      // sorting default jika tidak di tuliskan di crud
+      sortOpsi = { name: 1 };
+    }
+
+    // Membuat fungsi search
+    let searchC = {};
+    if (search) {
+      searchC = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } }, // Case-insensitive search by name
+          { email: { $regex: search, $options: 'i' } }, // Case-insensitive search by email
+        ],
+      };
+    }
+
+    const count = await User.countDocuments(searchC);
+    const users = await User.find(searchC)
+      .sort(sortOpsi)
+      .skip(skip)
+      .limit(pageSize);
+
+    // menghitung pagination dan menambahkan fitur sesuai pdf
+    const total_pages = Math.ceil(count / pageSize);
+    const has_previous_page = pageNumber > 1;
+    const has_next_page = pageNumber < total_pages;
+
+    const hasil = {
+      page_number: pageNumber,
+      page_size: pageSize,
+      count: count,
+      total_pages: total_pages,
+      has_previous_page: has_previous_page,
+      has_next_page: has_next_page,
+      data: users,
+    };
+
+    res.send(hasil);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+}
+
 /**
  * Handle get list of users request
  * @param {object} request - Express request object
@@ -9,14 +77,6 @@ const { User } = require('../../../models');
  * @param {object} next - Express route middlewares
  * @returns {object} Response object or pass an error to the next route
  */
-async function getUsers(request, response, next) {
-  try {
-    const users = await usersService.getUsers();
-    return response.status(200).json(users);
-  } catch (error) {
-    return next(error);
-  }
-}
 
 /**
  * Handle get user detail request
@@ -189,33 +249,7 @@ async function changePassword(request, response, next) {
     return next(error);
   }
 }
-//pagination
-exports.getUsers = async (req, res) => {
-  const { pageNumber, limit, sort, asc } = req.query;
 
-  // Validate and sanitize user input
-  const pageNumberValid = parseInt(pageNumber, 10) > 0;
-  const limitValid = parseInt(limit, 10) > 0;
-  const sortValid = ['name', 'email', 'createdAt'].includes(sort);
-  const ascValid = ['asc', 'desc'].includes(asc);
-
-  if (!(pageNumberValid && limitValid && sortValid && ascValid)) {
-    return res.status(400).send({ error: 'Invalid query parameters' });
-  }
-
-  const skip = (pageNumber - 1) * limit;
-  try {
-    const user = await User.find()
-      .sort({ [sort]: asc === 'asc' ? 1 : -1 })
-      .skip(skip)
-      .limit(limit);
-
-    res.send({ pageNumber, limit, users });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ error: 'Internal Server Error' });
-  }
-};
 module.exports = {
   getUsers,
   getUser,
