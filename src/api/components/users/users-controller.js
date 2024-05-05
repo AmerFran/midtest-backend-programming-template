@@ -36,8 +36,8 @@ async function getUsers(req, res, next) {
     if (search) {
       searchC = {
         $or: [
-          { name: { $regex: search, $options: 'i' } }, // Case-insensitive search by name
-          { email: { $regex: search, $options: 'i' } }, // Case-insensitive search by email
+          { name: { $regex: search, $options: 'i' } }, // search dari nama
+          { email: { $regex: search, $options: 'i' } }, // search dari email
         ],
       };
     }
