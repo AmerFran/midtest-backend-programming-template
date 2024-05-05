@@ -3,13 +3,24 @@ const cors = require('cors');
 const express = require('express');
 const passport = require('passport');
 const pinoHTTP = require('pino-http');
-
+// tambahkan fungsi express rate limit dengan npm install express-rate-limit untuk membatasi limit login pada user
+const rateLimit = require('express-rate-limit');
+const app = express();
 const config = require('./config');
 const logger = require('./logger')('app');
 const routes = require('../api');
 const { errorResponder, errorHandler, errorTypes } = require('./errors');
 
-const app = express();
+// Fungsi Login Attempts Limit yang membatasi user untuk maksimal mencoba login hanya 5 kali ( dengan password atau pun email salah)
+// Dan ada windowMs itu ialah middleware dari express-rate-limit yang membuat satuan waktu dalam milisecond , artinya jika ingin membuat 1 jam maka 60 * 60 * 1000
+const loginLimit = rateLimit({
+  // loginLimit mengambil fungsi dari rateLimit yang sudah di inisialisasi di atas pada line 7
+  max: 5,
+  windowMs: 30 * 60 * 1000,
+  message: 'Error 403 Forbidden: Too many failed login attempts.',
+});
+// /api/authentication/login akan digunakan di operasi CRUD sebagai parameter nya sehingga kita bisa mengetes program yang dibuat
+app.use('/api/authentication/login', loginLimit);
 
 // Useful if behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc).
 // It shows the real origin IP in the Heroku or Cloudwatch logs.

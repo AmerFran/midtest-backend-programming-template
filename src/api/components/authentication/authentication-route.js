@@ -1,5 +1,4 @@
 const express = require('express');
-
 const authenticationControllers = require('./authentication-controller');
 const authenticationValidators = require('./authentication-validator');
 const celebrate = require('../../../core/celebrate-wrappers');

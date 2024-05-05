@@ -1,5 +1,4 @@
 const express = require('express');
-
 const authentication = require('./components/authentication/authentication-route');
 const usersRoutes = require('./components/users/users-route');
 
